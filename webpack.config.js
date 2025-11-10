@@ -50,6 +50,24 @@ module.exports = {
       commonjs2: 'react-dom',
       amd: 'react-dom',
       root: 'ReactDOM'
+    },
+    '@mui/material': {
+      commonjs: '@mui/material',
+      commonjs2: '@mui/material',
+      amd: '@mui/material',
+      root: 'MaterialUI'
+    },
+    '@emotion/react': {
+      commonjs: '@emotion/react',
+      commonjs2: '@emotion/react',
+      amd: '@emotion/react',
+      root: 'emotionReact'
+    },
+    '@emotion/styled': {
+      commonjs: '@emotion/styled',
+      commonjs2: '@emotion/styled',
+      amd: '@emotion/styled',
+      root: 'emotionStyled'
     }
   }
 };

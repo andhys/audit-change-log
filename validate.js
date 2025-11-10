@@ -37,9 +37,10 @@ const checks = [
     { name: 'Audit log payload with pageSize', pattern: /pageSize:\s*currentPageSize/ },
     { name: 'Date input fields', pattern: /type="date"/ },
     { name: 'User search input', pattern: /Search user by name/ },
-    { name: 'Pagination controls', pattern: /Previous.*Next/s },
-    { name: 'Page size selector', pattern: /Page Size:/ },
-    { name: 'Table structure', pattern: /<table/ }
+    { name: 'Pagination controls', pattern: /Pagination/ },
+    { name: 'Page size selector', pattern: /Page Size/ },
+    { name: 'Table structure', pattern: /Table/ },
+    { name: 'Material-UI components', pattern: /@mui\/material/ }
 ];
 
 checks.forEach(check => {

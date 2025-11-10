@@ -1,4 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Alert,
+  Autocomplete,
+  Stack,
+  Pagination,
+  SelectChangeEvent,
+} from '@mui/material';
 import type { AuditLog, User } from './types';
 
 const AuditLogComponent: React.FC = () => {
@@ -6,7 +29,6 @@ const AuditLogComponent: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [searchString, setSearchString] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
-  const [showUserDropdown, setShowUserDropdown] = useState<boolean>(false);
   
   // State for date selection
   const [selectedFromDate, setSelectedFromDate] = useState<string>('');
@@ -44,7 +66,6 @@ const AuditLogComponent: React.FC = () => {
 
       const data: User[] = await response.json();
       setUsers(data);
-      setShowUserDropdown(true);
     } catch (err) {
       console.error('Error fetching users:', err);
       setUsers([]);
@@ -111,331 +132,170 @@ const AuditLogComponent: React.FC = () => {
   }, [fetchAuditData]);
 
   // Handle user selection
-  const handleUserSelect = (user: User): void => {
-    setSelectedUserId(user.userId);
-    setSearchString(user.fullName || user.userId.toString());
-    setShowUserDropdown(false);
-    setCurrentPage(1); // Reset to first page when changing user
-  };
-
-  // Handle page change
-  const handlePageChange = (newPage: number): void => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+  const handleUserSelect = (_event: React.SyntheticEvent, value: User | null): void => {
+    if (value) {
+      setSelectedUserId(value.userId);
+      setCurrentPage(1); // Reset to first page when changing user
+    } else {
+      setSelectedUserId(null);
     }
   };
 
+  // Handle page change
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number): void => {
+    setCurrentPage(page);
+  };
+
   // Handle page size change
-  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-    setCurrentPageSize(parseInt(e.target.value, 10));
+  const handlePageSizeChange = (event: SelectChangeEvent<number>): void => {
+    setCurrentPageSize(Number(event.target.value));
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
-  // Handle dropdown item mouse enter
-  const [hoveredItem, setHoveredItem] = useState<number | null>(null);
-
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Audit Log</h1>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Audit Log
+      </Typography>
       
       {/* Search and Filter Section */}
-      <div style={styles.filterSection}>
-        {/* User Search Field */}
-        <div style={styles.filterGroup}>
-          <label htmlFor="user-search" style={styles.label}>User:</label>
-          <div style={styles.autocompleteContainer}>
-            <input
-              id="user-search"
-              type="text"
-              value={searchString}
-              onChange={(e) => setSearchString(e.target.value)}
-              onFocus={() => searchString && setShowUserDropdown(true)}
-              placeholder="Search user by name..."
-              style={styles.input}
-              aria-label="Search for a user by name"
-            />
-            {showUserDropdown && users.length > 0 && (
-              <div style={styles.dropdown}>
-                {users.map((user) => (
-                  <div
-                    key={user.userId}
-                    onClick={() => handleUserSelect(user)}
-                    onMouseEnter={() => setHoveredItem(user.userId)}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    style={{
-                      ...styles.dropdownItem,
-                      ...(hoveredItem === user.userId ? styles.dropdownItemHover : {})
-                    }}
-                  >
-                    {user.fullName || user.userId}
-                  </div>
-                ))}
-              </div>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-end">
+          {/* User Search Field */}
+          <Autocomplete
+            sx={{ minWidth: 250 }}
+            options={users}
+            getOptionLabel={(option) => option.fullName}
+            onChange={handleUserSelect}
+            onInputChange={(_event, value) => setSearchString(value)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="User"
+                placeholder="Search user by name..."
+                variant="outlined"
+              />
             )}
-          </div>
-        </div>
+            noOptionsText={searchString.length < 2 ? "Type at least 2 characters" : "No users found"}
+          />
 
-        {/* From Date */}
-        <div style={styles.filterGroup}>
-          <label htmlFor="from-date" style={styles.label}>From Date:</label>
-          <input
-            id="from-date"
+          {/* From Date */}
+          <TextField
+            label="From Date"
             type="date"
             value={selectedFromDate}
             onChange={(e) => setSelectedFromDate(e.target.value)}
-            style={styles.input}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 200 }}
           />
-        </div>
 
-        {/* To Date */}
-        <div style={styles.filterGroup}>
-          <label htmlFor="to-date" style={styles.label}>To Date:</label>
-          <input
-            id="to-date"
+          {/* To Date */}
+          <TextField
+            label="To Date"
             type="date"
             value={selectedToDate}
             onChange={(e) => setSelectedToDate(e.target.value)}
-            style={styles.input}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 200 }}
           />
-        </div>
 
-        {/* Page Size Selector */}
-        <div style={styles.filterGroup}>
-          <label htmlFor="page-size" style={styles.label}>Page Size:</label>
-          <select
-            id="page-size"
-            value={currentPageSize}
-            onChange={handlePageSizeChange}
-            style={styles.select}
-          >
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </div>
-      </div>
+          {/* Page Size Selector */}
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>Page Size</InputLabel>
+            <Select
+              value={currentPageSize}
+              label="Page Size"
+              onChange={handlePageSizeChange}
+            >
+              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={25}>25</MenuItem>
+              <MenuItem value={50}>50</MenuItem>
+              <MenuItem value={100}>100</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
+      </Paper>
 
       {/* Error Message */}
       {error && (
-        <div style={styles.error}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           Error: {error}
-        </div>
+        </Alert>
       )}
 
       {/* Loading Indicator */}
       {loading && (
-        <div style={styles.loading}>
-          Loading audit data...
-        </div>
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+        </Box>
       )}
 
       {/* Audit Data Table */}
       {!loading && auditData.length > 0 && (
-        <div style={styles.tableContainer}>
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.tableHeaderRow}>
-                <th style={styles.tableHeader}>Change Date</th>
-                <th style={styles.tableHeader}>User Name</th>
-                <th style={styles.tableHeader}>Change Type</th>
-                <th style={styles.tableHeader}>Schema</th>
-                <th style={styles.tableHeader}>Table</th>
-                <th style={styles.tableHeader}>Key Value</th>
-                <th style={styles.tableHeader}>Diff</th>
-              </tr>
-            </thead>
-            <tbody>
-              {auditData.map((item, index) => (
-                <tr key={index} style={styles.tableRow}>
-                  <td style={styles.tableCell}>
-                    {item.changeDate ? new Date(item.changeDate).toLocaleString() : '-'}
-                  </td>
-                  <td style={styles.tableCell}>{item.userName || '-'}</td>
-                  <td style={styles.tableCell}>{item.changeType || '-'}</td>
-                  <td style={styles.tableCell}>{item.schemaName || '-'}</td>
-                  <td style={styles.tableCell}>{item.tableName || '-'}</td>
-                  <td style={styles.tableCell}>{item.keyValue || '-'}</td>
-                  <td style={styles.tableCell}>
-                    {item.diffText || item.diffJson || '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <TableContainer component={Paper} sx={{ mb: 3 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell><strong>Change Date</strong></TableCell>
+                  <TableCell><strong>User Name</strong></TableCell>
+                  <TableCell><strong>Change Type</strong></TableCell>
+                  <TableCell><strong>Schema</strong></TableCell>
+                  <TableCell><strong>Table</strong></TableCell>
+                  <TableCell><strong>Key Value</strong></TableCell>
+                  <TableCell><strong>Diff</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {auditData.map((item, index) => (
+                  <TableRow key={index} hover>
+                    <TableCell>
+                      {item.changeDate ? new Date(item.changeDate).toLocaleString() : '-'}
+                    </TableCell>
+                    <TableCell>{item.userName || '-'}</TableCell>
+                    <TableCell>{item.changeType || '-'}</TableCell>
+                    <TableCell>{item.schemaName || '-'}</TableCell>
+                    <TableCell>{item.tableName || '-'}</TableCell>
+                    <TableCell>{item.keyValue || '-'}</TableCell>
+                    <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.diffText || item.diffJson || '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Pagination Controls */}
+          {totalPages > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
+        </>
       )}
 
       {/* No Data Message */}
       {!loading && auditData.length === 0 && selectedUserId && (
-        <div style={styles.noData}>
+        <Alert severity="info">
           No audit data found for the selected criteria.
-        </div>
+        </Alert>
       )}
 
       {!selectedUserId && (
-        <div style={styles.noData}>
+        <Alert severity="info">
           Please select a user to view audit data.
-        </div>
+        </Alert>
       )}
-
-      {/* Pagination Controls */}
-      {auditData.length > 0 && (
-        <div style={styles.pagination}>
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            style={styles.paginationButton}
-          >
-            Previous
-          </button>
-          <span style={styles.paginationInfo}>
-            Page {currentPage} {totalPages > 0 ? `of ${totalPages}` : ''}
-          </span>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={totalPages > 0 && currentPage >= totalPages}
-            style={styles.paginationButton}
-          >
-            Next
-          </button>
-        </div>
-      )}
-    </div>
+    </Container>
   );
-};
-
-// Inline styles
-const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    padding: '20px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    fontFamily: 'Arial, sans-serif',
-  },
-  title: {
-    fontSize: '24px',
-    marginBottom: '20px',
-    color: '#333',
-  },
-  filterSection: {
-    display: 'flex',
-    gap: '15px',
-    marginBottom: '20px',
-    flexWrap: 'wrap',
-    alignItems: 'flex-end',
-  },
-  filterGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    minWidth: '150px',
-  },
-  label: {
-    marginBottom: '5px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    color: '#555',
-  },
-  input: {
-    padding: '8px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  select: {
-    padding: '8px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  autocompleteContainer: {
-    position: 'relative',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    border: '1px solid #ccc',
-    borderTop: 'none',
-    borderRadius: '0 0 4px 4px',
-    maxHeight: '200px',
-    overflowY: 'auto',
-    zIndex: 1000,
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  dropdownItem: {
-    padding: '10px',
-    cursor: 'pointer',
-    borderBottom: '1px solid #eee',
-  },
-  dropdownItemHover: {
-    backgroundColor: '#f5f5f5',
-  },
-  error: {
-    padding: '10px',
-    backgroundColor: '#fee',
-    color: '#c33',
-    borderRadius: '4px',
-    marginBottom: '20px',
-  },
-  loading: {
-    padding: '20px',
-    textAlign: 'center',
-    color: '#666',
-  },
-  noData: {
-    padding: '20px',
-    textAlign: 'center',
-    color: '#999',
-  },
-  tableContainer: {
-    overflowX: 'auto',
-    marginBottom: '20px',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    backgroundColor: 'white',
-  },
-  tableHeaderRow: {
-    backgroundColor: '#f5f5f5',
-  },
-  tableHeader: {
-    padding: '12px',
-    textAlign: 'left',
-    borderBottom: '2px solid #ddd',
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  tableRow: {
-    borderBottom: '1px solid #eee',
-  },
-  tableCell: {
-    padding: '12px',
-    textAlign: 'left',
-  },
-  pagination: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '15px',
-    marginTop: '20px',
-  },
-  paginationButton: {
-    padding: '8px 16px',
-    backgroundColor: '#007bff',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  paginationInfo: {
-    fontSize: '14px',
-    color: '#666',
-  },
 };
 
 export default AuditLogComponent;
