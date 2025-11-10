@@ -18,7 +18,7 @@ This creates `dist/bundle.js` which can be used in your application.
 
 ### Example 1: Basic Usage in React Application
 
-```jsx
+```tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AuditLog from 'audit-change-log';
@@ -100,33 +100,28 @@ Your backend must implement these two endpoints:
 ```json
 [
   {
-    "id": "user-id-1",
-    "name": "John Doe",
-    "username": "johndoe"
+    "userId": 1,
+    "fullName": "John Doe"
   },
   {
-    "id": "user-id-2",
-    "name": "Jane Smith",
-    "username": "janesmith"
+    "userId": 2,
+    "fullName": "Jane Smith"
   }
 ]
 ```
 
 **Required Fields:**
-- `id` (string) - Unique user identifier
-
-**Optional Fields:**
-- `name` (string) - User's display name
-- `username` (string) - User's username
+- `userId` (number) - Unique user identifier
+- `fullName` (string) - User's full name
 
 ### 2. Audit Log Search Endpoint
 
-**Endpoint:** `POST /api/AuditLog/SearchChangesForUser`
+**Endpoint:** `POST /api/AuditLog/GetAuditChangeLogsByUserId`
 
 **Request Body:**
 ```json
 {
-  "userId": "selected-user-id",
+  "userId": 123,
   "fromDate": "2024-01-01",
   "toDate": "2024-01-31",
   "page": 1,
@@ -139,45 +134,32 @@ Your backend must implement these two endpoints:
 {
   "items": [
     {
-      "timestamp": "2024-01-15T10:30:00Z",
-      "userId": "user-id-1",
-      "user": "John Doe",
-      "action": "UPDATE",
+      "schemaName": "dbo",
+      "tableName": "Customers",
+      "keyValue": 1001,
+      "changedByUser": 123,
+      "userName": "John Doe",
+      "changeDate": "2024-01-15T10:30:00Z",
+      "changeType": "UPDATE",
       "entity": "Customer",
-      "entityType": "Customer",
-      "changes": {
-        "field": "email",
-        "oldValue": "old@example.com",
-        "newValue": "new@example.com"
-      }
+      "diffJson": "{\"field\":\"email\",\"oldValue\":\"old@example.com\",\"newValue\":\"new@example.com\"}",
+      "diffText": "Email changed from old@example.com to new@example.com"
     }
   ],
   "totalCount": 50
 }
 ```
 
-**Alternative Response:** Simple array (if pagination info is in headers)
-```json
-[
-  {
-    "timestamp": "2024-01-15T10:30:00Z",
-    "userId": "user-id-1",
-    "action": "UPDATE",
-    "entity": "Customer",
-    "changes": {...}
-  }
-]
-```
-
-**Required Fields:**
-- `timestamp` (string) - ISO 8601 date string
-- `action` (string) - Action performed (e.g., CREATE, UPDATE, DELETE)
-
-**Optional Fields:**
-- `user` or `userId` (string) - User who performed the action
-- `entity` or `entityType` (string) - Type of entity affected
-- `changes` (object/string) - Description of changes made
-- `totalCount` (number) - Total number of records (for pagination)
+**Required Fields (based on C# AuditLog model):**
+- `schemaName` (string) - Database schema name
+- `tableName` (string) - Table name
+- `keyValue` (number) - Primary key value
+- `changedByUser` (number, nullable) - User ID who made the change
+- `userName` (string) - User name who made the change
+- `changeDate` (string) - ISO 8601 date string
+- `changeType` (string) - Type of change (CREATE, UPDATE, DELETE, etc.)
+- `diffJson` (string) - JSON string describing the changes
+- `diffText` (string) - Human-readable text describing the changes
 
 ## API Implementation Examples
 
@@ -190,22 +172,19 @@ app.post('/api/User/SearchUserByPartialName', async (req, res) => {
   
   // Search users in database
   const users = await db.users.find({
-    $or: [
-      { name: { $regex: data, $options: 'i' } },
-      { username: { $regex: data, $options: 'i' } }
-    ]
-  }).limit(10);
+    fullName: { $regex: data, $options: 'i' }
+  }).limit(10).select('userId fullName');
   
   res.json(users);
 });
 
 // Audit log search endpoint
-app.post('/api/AuditLog/SearchChangesForUser', async (req, res) => {
+app.post('/api/AuditLog/GetAuditChangeLogsByUserId', async (req, res) => {
   const { userId, fromDate, toDate, page, pageSize } = req.body;
   
-  const query = { userId };
-  if (fromDate) query.timestamp = { $gte: new Date(fromDate) };
-  if (toDate) query.timestamp = { ...query.timestamp, $lte: new Date(toDate) };
+  const query = { changedByUser: userId };
+  if (fromDate) query.changeDate = { $gte: new Date(fromDate) };
+  if (toDate) query.changeDate = { ...query.changeDate, $lte: new Date(toDate) };
   
   const skip = (page - 1) * pageSize;
   
@@ -225,23 +204,24 @@ app.post('/api/AuditLog/SearchChangesForUser', async (req, res) => {
 public async Task<IActionResult> SearchUsers([FromBody] SearchRequest request)
 {
     var users = await _context.Users
-        .Where(u => u.Name.Contains(request.Data) || u.Username.Contains(request.Data))
+        .Where(u => u.FullName.Contains(request.Data))
         .Take(10)
+        .Select(u => new { u.UserId, u.FullName })
         .ToListAsync();
     
     return Ok(users);
 }
 
-[HttpPost("api/AuditLog/SearchChangesForUser")]
+[HttpPost("api/AuditLog/GetAuditChangeLogsByUserId")]
 public async Task<IActionResult> SearchAuditLogs([FromBody] AuditSearchRequest request)
 {
-    var query = _context.AuditLogs.Where(a => a.UserId == request.UserId);
+    var query = _context.AuditLogs.Where(a => a.ChangedByUser == request.UserId);
     
     if (!string.IsNullOrEmpty(request.FromDate))
-        query = query.Where(a => a.Timestamp >= DateTime.Parse(request.FromDate));
+        query = query.Where(a => a.ChangeDate >= DateTime.Parse(request.FromDate));
     
     if (!string.IsNullOrEmpty(request.ToDate))
-        query = query.Where(a => a.Timestamp <= DateTime.Parse(request.ToDate));
+        query = query.Where(a => a.ChangeDate <= DateTime.Parse(request.ToDate));
     
     var totalCount = await query.CountAsync();
     var items = await query

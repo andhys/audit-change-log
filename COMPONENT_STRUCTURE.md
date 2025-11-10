@@ -14,15 +14,15 @@
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  ┌───────────────────────────────────────────────────────────────┐ │
-│  │ Timestamp       │ User  │ Action │ Entity │ Changes          │ │
-│  ├─────────────────────────────────────────────────────────────────┤
-│  │ 2024-01-15 10:30│ User1 │ UPDATE │ Customer│ {email: ...}   │ │
-│  │ 2024-01-14 15:20│ User1 │ CREATE │ Order   │ {orderId: ...} │ │
-│  │ 2024-01-13 09:15│ User1 │ DELETE │ Product │ {productId:...}│ │
-│  │ 2024-01-12 14:45│ User1 │ UPDATE │ Profile │ {phone: ...}   │ │
-│  │ 2024-01-11 11:30│ User1 │ CREATE │ Comment │ {text: ...}    │ │
-│  └─────────────────────────────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────────────────────┐ │
+│  │ Change Date │ User Name │ Change Type │ Schema │ Table │ Key │ Diff │ │
+│  ├─────────────────────────────────────────────────────────────────────┤
+│  │ 2024-01-15  │ John Doe  │ UPDATE      │ dbo    │ Cust  │ 100 │ ... │ │
+│  │ 2024-01-14  │ John Doe  │ CREATE      │ dbo    │ Order │ 200 │ ... │ │
+│  │ 2024-01-13  │ John Doe  │ DELETE      │ dbo    │ Prod  │ 300 │ ... │ │
+│  │ 2024-01-12  │ John Doe  │ UPDATE      │ dbo    │ Users │ 400 │ ... │ │
+│  │ 2024-01-11  │ John Doe  │ CREATE      │ dbo    │ Comm  │ 500 │ ... │ │
+│  └─────────────────────────────────────────────────────────────────────┘ │
 │                                                                     │
 │              [Previous]  Page 1 of 5  [Next]                       │
 │                                                                     │
@@ -55,18 +55,43 @@
   - Automatically fetches new data on page change
 
 ### 4. Data Table
-- **Columns**:
-  - Timestamp (formatted as locale string)
-  - User (from response data)
-  - Action (e.g., CREATE, UPDATE, DELETE)
-  - Entity (entity type affected)
-  - Changes (JSON stringified or raw data)
+- **Columns** (based on C# AuditLog model):
+  - Change Date (formatted as locale string)
+  - User Name (userName from response)
+  - Change Type (e.g., CREATE, UPDATE, DELETE)
+  - Schema (schemaName)
+  - Table (tableName)
+  - Key Value (keyValue - primary key)
+  - Diff (diffText or diffJson)
 - **Behavior**: Updates automatically when filters change
 
 ### 5. Loading & Error States
 - Loading indicator displayed during API calls
 - Error messages shown if API calls fail
 - Helpful messages when no data is available
+
+## TypeScript Support
+
+The component is written in TypeScript with strict type checking. Type definitions match the C# backend models:
+
+```typescript
+interface AuditLog {
+  schemaName: string;
+  tableName: string;
+  keyValue: number;
+  changedByUser: number | null;
+  userName: string;
+  changeDate: string;
+  changeType: string;
+  diffJson: string;
+  diffText: string;
+}
+
+interface User {
+  userId: number;
+  fullName: string;
+}
+```
 
 ## API Integration
 
@@ -83,18 +108,18 @@ Content-Type: application/json
 Response: Array of user objects
 ```javascript
 [
-  { "id": "1", "name": "John Doe", "username": "johndoe" },
+  { "userId": 1, "fullName": "John Doe" },
   ...
 ]
 ```
 
 ### Fetch Audit Logs
 ```javascript
-POST /api/AuditLog/SearchChangesForUser
+POST /api/AuditLog/GetAuditChangeLogsByUserId
 Content-Type: application/json
 
 {
-  "userId": "selected-user-id",
+  "userId": 123,
   "fromDate": "2024-01-01",
   "toDate": "2024-01-31",
   "page": 1,
@@ -107,12 +132,15 @@ Response: Object with items array and optional totalCount
 {
   "items": [
     {
-      "timestamp": "2024-01-15T10:30:00Z",
-      "userId": "1",
-      "user": "John Doe",
-      "action": "UPDATE",
-      "entity": "Customer",
-      "changes": { ... }
+      "schemaName": "dbo",
+      "tableName": "Customers",
+      "keyValue": 1001,
+      "changedByUser": 123,
+      "userName": "John Doe",
+      "changeDate": "2024-01-15T10:30:00Z",
+      "changeType": "UPDATE",
+      "diffJson": "{\"field\":\"email\",\"old\":\"old@example.com\",\"new\":\"new@example.com\"}",
+      "diffText": "Email changed from old@example.com to new@example.com"
     },
     ...
   ],
@@ -122,17 +150,17 @@ Response: Object with items array and optional totalCount
 
 ## State Management
 
-The component uses React hooks to manage state:
-- `selectedUserId` - Currently selected user ID
-- `searchString` - User search input value
-- `users` - List of users from search
-- `selectedFromDate` - Start date filter
-- `selectedToDate` - End date filter
-- `currentPage` - Current page number
-- `currentPageSize` - Number of items per page
-- `auditData` - Array of audit log entries
-- `loading` - Loading state indicator
-- `error` - Error message (if any)
+The component uses React hooks with TypeScript to manage state:
+- `selectedUserId: number | null` - Currently selected user ID
+- `searchString: string` - User search input value
+- `users: User[]` - List of users from search
+- `selectedFromDate: string` - Start date filter
+- `selectedToDate: string` - End date filter
+- `currentPage: number` - Current page number
+- `currentPageSize: number` - Number of items per page
+- `auditData: AuditLog[]` - Array of audit log entries
+- `loading: boolean` - Loading state indicator
+- `error: string | null` - Error message (if any)
 
 ## Automatic Updates
 
