@@ -1,19 +1,29 @@
 # Audit Change Log
 
-A React component for viewing and filtering audit logs with user search, date filtering, and pagination support.
+A TypeScript React component with Material-UI for viewing and filtering audit logs with user search, date filtering, and pagination support.
 
 ## Features
 
-- **User Search**: Searchable user field that fetches users from the API as you type
-- **Date Filtering**: Select from and to dates to filter audit logs
-- **Pagination**: Navigate through audit data with configurable page sizes (10, 25, 50, 100)
+- **TypeScript**: Full type safety with strict mode and type definitions matching C# backend models
+- **Material-UI**: Professional Material Design interface with responsive components
+- **User Search**: Autocomplete field with debounced API calls as you type
+- **Date Filtering**: Material-UI date pickers for from/to date selection
+- **Pagination**: MUI Pagination component with configurable page sizes (10, 25, 50, 100)
 - **Real-time Updates**: Automatically fetches audit data when filters change
-- **Responsive Design**: Clean, table-based layout for audit log entries
+- **Responsive Design**: Mobile-friendly layout with Material-UI components
 
 ## Installation
 
 ```bash
 npm install
+```
+
+### Peer Dependencies
+
+This component requires the following peer dependencies:
+
+```bash
+npm install react react-dom @mui/material @emotion/react @emotion/styled
 ```
 
 ## Build
@@ -24,6 +34,9 @@ npm run build
 
 # Development build with watch mode
 npm run dev
+
+# Type checking
+npm run type-check
 ```
 
 ## Usage
