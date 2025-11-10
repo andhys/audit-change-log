@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log Component - Demo with Mock API</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React and ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Mock API for demonstration -->
+    <script>
+        // Override fetch to provide mock data
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            // Mock user search endpoint
+            if (url.includes('/api/User/SearchUserByPartialName')) {
+                const body = JSON.parse(options.body);
+                const searchString = body.data.toLowerCase();
+                
+                const mockUsers = [
+                    { id: '1', name: 'John Doe', username: 'johndoe' },
+                    { id: '2', name: 'Jane Smith', username: 'janesmith' },
+                    { id: '3', name: 'Bob Johnson', username: 'bjohnson' },
+                    { id: '4', name: 'Alice Williams', username: 'awilliams' },
+                    { id: '5', name: 'Charlie Brown', username: 'cbrown' }
+                ];
+                
+                const filtered = mockUsers.filter(u => 
+                    u.name.toLowerCase().includes(searchString) || 
+                    u.username.toLowerCase().includes(searchString)
+                );
+                
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(filtered)
+                });
+            }
+            
+            // Mock audit log endpoint
+            if (url.includes('/api/AuditLog/SearchChangesForUser')) {
+                const body = JSON.parse(options.body);
+                
+                const mockAuditData = [
+                    {
+                        timestamp: new Date('2024-01-15T10:30:00').toISOString(),
+                        userId: body.userId,
+                        user: 'User ' + body.userId,
+                        action: 'UPDATE',
+                        entity: 'Customer',
+                        changes: { field: 'email', old: 'old@example.com', new: 'new@example.com' }
+                    },
+                    {
+                        timestamp: new Date('2024-01-14T15:20:00').toISOString(),
+                        userId: body.userId,
+                        user: 'User ' + body.userId,
+                        action: 'CREATE',
+                        entity: 'Order',
+                        changes: { orderId: '12345', amount: 99.99 }
+                    },
+                    {
+                        timestamp: new Date('2024-01-13T09:15:00').toISOString(),
+                        userId: body.userId,
+                        user: 'User ' + body.userId,
+                        action: 'DELETE',
+                        entity: 'Product',
+                        changes: { productId: '67890', name: 'Widget' }
+                    },
+                    {
+                        timestamp: new Date('2024-01-12T14:45:00').toISOString(),
+                        userId: body.userId,
+                        user: 'User ' + body.userId,
+                        action: 'UPDATE',
+                        entity: 'User Profile',
+                        changes: { field: 'phone', old: '555-0100', new: '555-0200' }
+                    },
+                    {
+                        timestamp: new Date('2024-01-11T11:30:00').toISOString(),
+                        userId: body.userId,
+                        user: 'User ' + body.userId,
+                        action: 'CREATE',
+                        entity: 'Comment',
+                        changes: { commentId: 'abc123', text: 'Great product!' }
+                    }
+                ];
+                
+                const pageSize = body.pageSize || 10;
+                const page = body.page || 1;
+                const start = (page - 1) * pageSize;
+                const end = start + pageSize;
+                
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        items: mockAuditData.slice(start, end),
+                        totalCount: mockAuditData.length
+                    })
+                });
+            }
+            
+            // Fall back to original fetch for other URLs
+            return originalFetch.apply(this, arguments);
+        };
+    </script>
+    
+    <!-- The compiled AuditLog component -->
+    <script src="dist/bundle.js"></script>
+    
+    <script>
+        // Render the component
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(AuditChangeLog.default));
+    </script>
+</body>
+</html>
