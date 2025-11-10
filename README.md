@@ -30,7 +30,7 @@ npm run dev
 
 ### As a standalone component
 
-```jsx
+```tsx
 import AuditLog from 'audit-change-log';
 
 function App() {
@@ -54,14 +54,20 @@ The component expects the following API endpoints to be available:
     "data": "search string"
   }
   ```
-- **Response**: Array of user objects with at least an `id` property and optionally `name` or `username`
+- **Response**: Array of user objects with `userId` (number) and `fullName` (string)
+  ```json
+  [
+    { "userId": 1, "fullName": "John Doe" },
+    { "userId": 2, "fullName": "Jane Smith" }
+  ]
+  ```
 
 ### 2. Search Audit Logs
-- **Endpoint**: `POST /api/AuditLog/SearchChangesForUser`
+- **Endpoint**: `POST /api/AuditLog/GetAuditChangeLogsByUserId`
 - **Payload**:
   ```json
   {
-    "userId": "selected user id",
+    "userId": 123,
     "fromDate": "YYYY-MM-DD",
     "toDate": "YYYY-MM-DD",
     "page": 1,
@@ -69,21 +75,54 @@ The component expects the following API endpoints to be available:
   }
   ```
 - **Response**: Array of audit log entries or an object with `items` array and optional `totalCount` for pagination
+  ```json
+  {
+    "items": [
+      {
+        "schemaName": "dbo",
+        "tableName": "Customers",
+        "keyValue": 1001,
+        "changedByUser": 123,
+        "userName": "John Doe",
+        "changeDate": "2024-01-15T10:30:00Z",
+        "changeType": "UPDATE",
+        "diffJson": "{\"field\":\"email\",\"old\":\"old@example.com\",\"new\":\"new@example.com\"}",
+        "diffText": "Email changed from old@example.com to new@example.com"
+      }
+    ],
+    "totalCount": 50
+  }
+  ```
 
 ### Expected Audit Log Data Structure
 
-Each audit log entry can have the following properties:
-- `timestamp`: ISO date string
-- `user` or `userId`: User identifier
-- `action`: Action performed
-- `entity` or `entityType`: Entity affected
-- `changes`: Object or string describing the changes
+Each audit log entry has the following properties (based on C# model):
+- `schemaName`: Database schema name
+- `tableName`: Table name
+- `keyValue`: Primary key value
+- `changedByUser`: User ID who made the change (nullable)
+- `userName`: User name who made the change
+- `changeDate`: ISO date string
+- `changeType`: Type of change (CREATE, UPDATE, DELETE, etc.)
+- `diffJson`: JSON string describing the changes
+- `diffText`: Human-readable text describing the changes
+
+## TypeScript Support
+
+The component is written in TypeScript and includes type definitions. Import types:
+
+```tsx
+import AuditLog, { AuditLogType, User, AuditSearchRequest, AuditSearchResponse } from 'audit-change-log';
+```
 
 ## Development
 
 ```bash
 # Lint the code
 npm run lint
+
+# Type check
+npm run type-check
 ```
 
 ## Component Props

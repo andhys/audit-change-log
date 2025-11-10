@@ -30,16 +30,15 @@
                 const searchString = body.data.toLowerCase();
                 
                 const mockUsers = [
-                    { id: '1', name: 'John Doe', username: 'johndoe' },
-                    { id: '2', name: 'Jane Smith', username: 'janesmith' },
-                    { id: '3', name: 'Bob Johnson', username: 'bjohnson' },
-                    { id: '4', name: 'Alice Williams', username: 'awilliams' },
-                    { id: '5', name: 'Charlie Brown', username: 'cbrown' }
+                    { userId: 1, fullName: 'John Doe' },
+                    { userId: 2, fullName: 'Jane Smith' },
+                    { userId: 3, fullName: 'Bob Johnson' },
+                    { userId: 4, fullName: 'Alice Williams' },
+                    { userId: 5, fullName: 'Charlie Brown' }
                 ];
                 
                 const filtered = mockUsers.filter(u => 
-                    u.name.toLowerCase().includes(searchString) || 
-                    u.username.toLowerCase().includes(searchString)
+                    u.fullName.toLowerCase().includes(searchString)
                 );
                 
                 return Promise.resolve({
@@ -49,49 +48,64 @@
             }
             
             // Mock audit log endpoint
-            if (url.includes('/api/AuditLog/SearchChangesForUser')) {
+            if (url.includes('/api/AuditLog/GetAuditChangeLogsByUserId')) {
                 const body = JSON.parse(options.body);
                 
                 const mockAuditData = [
                     {
-                        timestamp: new Date('2024-01-15T10:30:00').toISOString(),
-                        userId: body.userId,
-                        user: 'User ' + body.userId,
-                        action: 'UPDATE',
-                        entity: 'Customer',
-                        changes: { field: 'email', old: 'old@example.com', new: 'new@example.com' }
+                        schemaName: 'dbo',
+                        tableName: 'Customers',
+                        keyValue: 1001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-15T10:30:00').toISOString(),
+                        changeType: 'UPDATE',
+                        diffJson: JSON.stringify({ field: 'email', old: 'old@example.com', new: 'new@example.com' }),
+                        diffText: 'Email changed from old@example.com to new@example.com'
                     },
                     {
-                        timestamp: new Date('2024-01-14T15:20:00').toISOString(),
-                        userId: body.userId,
-                        user: 'User ' + body.userId,
-                        action: 'CREATE',
-                        entity: 'Order',
-                        changes: { orderId: '12345', amount: 99.99 }
+                        schemaName: 'dbo',
+                        tableName: 'Orders',
+                        keyValue: 2001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-14T15:20:00').toISOString(),
+                        changeType: 'CREATE',
+                        diffJson: JSON.stringify({ orderId: '12345', amount: 99.99 }),
+                        diffText: 'Order created with ID 12345, amount $99.99'
                     },
                     {
-                        timestamp: new Date('2024-01-13T09:15:00').toISOString(),
-                        userId: body.userId,
-                        user: 'User ' + body.userId,
-                        action: 'DELETE',
-                        entity: 'Product',
-                        changes: { productId: '67890', name: 'Widget' }
+                        schemaName: 'dbo',
+                        tableName: 'Products',
+                        keyValue: 3001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-13T09:15:00').toISOString(),
+                        changeType: 'DELETE',
+                        diffJson: JSON.stringify({ productId: '67890', name: 'Widget' }),
+                        diffText: 'Product Widget (ID: 67890) was deleted'
                     },
                     {
-                        timestamp: new Date('2024-01-12T14:45:00').toISOString(),
-                        userId: body.userId,
-                        user: 'User ' + body.userId,
-                        action: 'UPDATE',
-                        entity: 'User Profile',
-                        changes: { field: 'phone', old: '555-0100', new: '555-0200' }
+                        schemaName: 'dbo',
+                        tableName: 'Users',
+                        keyValue: 4001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-12T14:45:00').toISOString(),
+                        changeType: 'UPDATE',
+                        diffJson: JSON.stringify({ field: 'phone', old: '555-0100', new: '555-0200' }),
+                        diffText: 'Phone changed from 555-0100 to 555-0200'
                     },
                     {
-                        timestamp: new Date('2024-01-11T11:30:00').toISOString(),
-                        userId: body.userId,
-                        user: 'User ' + body.userId,
-                        action: 'CREATE',
-                        entity: 'Comment',
-                        changes: { commentId: 'abc123', text: 'Great product!' }
+                        schemaName: 'dbo',
+                        tableName: 'Comments',
+                        keyValue: 5001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-11T11:30:00').toISOString(),
+                        changeType: 'CREATE',
+                        diffJson: JSON.stringify({ commentId: 'abc123', text: 'Great product!' }),
+                        diffText: 'Comment created: "Great product!"'
                     }
                 ];
                 

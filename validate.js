@@ -1,15 +1,16 @@
 // Simple validation script to check the component structure
 const fs = require('fs');
-const path = require('path');
 
 console.log('Validating AuditLog Component...\n');
 
 // Check if main files exist
 const files = [
-    'src/AuditLog.jsx',
-    'src/index.js',
+    'src/AuditLog.tsx',
+    'src/index.ts',
+    'src/types.ts',
     'package.json',
     'webpack.config.js',
+    'tsconfig.json',
     '.babelrc',
     '.eslintrc.json',
     'dist/bundle.js'
@@ -23,11 +24,11 @@ files.forEach(file => {
 
 // Read and validate component code
 console.log('\nValidating component structure:');
-const componentCode = fs.readFileSync('src/AuditLog.jsx', 'utf8');
+const componentCode = fs.readFileSync('src/AuditLog.tsx', 'utf8');
 
 const checks = [
     { name: 'User search API endpoint', pattern: /\/api\/User\/SearchUserByPartialName/ },
-    { name: 'Audit log API endpoint', pattern: /\/api\/AuditLog\/SearchChangesForUser/ },
+    { name: 'Audit log API endpoint', pattern: /\/api\/AuditLog\/GetAuditChangeLogsByUserId/ },
     { name: 'User search payload format', pattern: /data:\s*search/ },
     { name: 'Audit log payload with userId', pattern: /userId:\s*selectedUserId/ },
     { name: 'Audit log payload with fromDate', pattern: /fromDate:\s*selectedFromDate/ },
