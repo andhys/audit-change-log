@@ -141,7 +141,6 @@ Your backend must implement these two endpoints:
       "userName": "John Doe",
       "changeDate": "2024-01-15T10:30:00Z",
       "changeType": "UPDATE",
-      "entity": "Customer",
       "diffJson": "{\"field\":\"email\",\"oldValue\":\"old@example.com\",\"newValue\":\"new@example.com\"}",
       "diffText": "Email changed from old@example.com to new@example.com"
     }

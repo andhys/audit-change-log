@@ -247,8 +247,11 @@ const AuditLogComponent: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {auditData.map((item, index) => (
-                  <TableRow key={index} hover>
+                {auditData.map((item) => (
+                  <TableRow
+                    key={`${item.schemaName}-${item.tableName}-${item.keyValue}-${item.changeDate}`}
+                    hover
+                  >
                     <TableCell>
                       {item.changeDate ? new Date(item.changeDate).toLocaleString() : '-'}
                     </TableCell>
@@ -256,7 +259,7 @@ const AuditLogComponent: React.FC = () => {
                     <TableCell>{item.changeType || '-'}</TableCell>
                     <TableCell>{item.schemaName || '-'}</TableCell>
                     <TableCell>{item.tableName || '-'}</TableCell>
-                    <TableCell>{item.keyValue || '-'}</TableCell>
+                    <TableCell>{item.keyValue ?? '-'}</TableCell>
                     <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {item.diffText || item.diffJson || '-'}
                     </TableCell>
