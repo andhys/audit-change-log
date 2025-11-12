@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log Component - Demo with Material-UI</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React and ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Material-UI from CDN -->
+    <script crossorigin src="https://unpkg.com/@mui/material@latest/umd/material-ui.production.min.js"></script>
+    
+    <!-- Mock API for demonstration -->
+    <script>
+        // Override fetch to provide mock data
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            // Mock user search endpoint
+            if (url.includes('/api/User/SearchUserByPartialName')) {
+                const body = JSON.parse(options.body);
+                const searchString = body.data.toLowerCase();
+                
+                const mockUsers = [
+                    { userId: 1, fullName: 'John Doe' },
+                    { userId: 2, fullName: 'Jane Smith' },
+                    { userId: 3, fullName: 'Bob Johnson' },
+                    { userId: 4, fullName: 'Alice Williams' },
+                    { userId: 5, fullName: 'Charlie Brown' }
+                ];
+                
+                const filtered = mockUsers.filter(u => 
+                    u.fullName.toLowerCase().includes(searchString)
+                );
+                
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(filtered)
+                });
+            }
+            
+            // Mock audit log endpoint
+            if (url.includes('/api/AuditLog/GetAuditChangeLogsByUserId')) {
+                const body = JSON.parse(options.body);
+                
+                const mockAuditData = [
+                    {
+                        schemaName: 'dbo',
+                        tableName: 'Customers',
+                        keyValue: 1001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-15T10:30:00').toISOString(),
+                        changeType: 'UPDATE',
+                        diffJson: JSON.stringify({ field: 'email', old: 'old@example.com', new: 'new@example.com' }),
+                        diffText: 'Email changed from old@example.com to new@example.com'
+                    },
+                    {
+                        schemaName: 'dbo',
+                        tableName: 'Orders',
+                        keyValue: 2001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-14T15:20:00').toISOString(),
+                        changeType: 'CREATE',
+                        diffJson: JSON.stringify({ orderId: '12345', amount: 99.99 }),
+                        diffText: 'Order created with ID 12345, amount $99.99'
+                    },
+                    {
+                        schemaName: 'dbo',
+                        tableName: 'Products',
+                        keyValue: 3001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-13T09:15:00').toISOString(),
+                        changeType: 'DELETE',
+                        diffJson: JSON.stringify({ productId: '67890', name: 'Widget' }),
+                        diffText: 'Product Widget (ID: 67890) was deleted'
+                    },
+                    {
+                        schemaName: 'dbo',
+                        tableName: 'Users',
+                        keyValue: 4001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-12T14:45:00').toISOString(),
+                        changeType: 'UPDATE',
+                        diffJson: JSON.stringify({ field: 'phone', old: '555-0100', new: '555-0200' }),
+                        diffText: 'Phone changed from 555-0100 to 555-0200'
+                    },
+                    {
+                        schemaName: 'dbo',
+                        tableName: 'Comments',
+                        keyValue: 5001,
+                        changedByUser: body.userId,
+                        userName: 'User ' + body.userId,
+                        changeDate: new Date('2024-01-11T11:30:00').toISOString(),
+                        changeType: 'CREATE',
+                        diffJson: JSON.stringify({ commentId: 'abc123', text: 'Great product!' }),
+                        diffText: 'Comment created: "Great product!"'
+                    }
+                ];
+                
+                const pageSize = body.pageSize || 10;
+                const page = body.page || 1;
+                const start = (page - 1) * pageSize;
+                const end = start + pageSize;
+                
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        items: mockAuditData.slice(start, end),
+                        totalCount: mockAuditData.length
+                    })
+                });
+            }
+            
+            // Fall back to original fetch for other URLs
+            return originalFetch.apply(this, arguments);
+        };
+    </script>
+    
+    <!-- The compiled AuditLog component -->
+    <script src="dist/bundle.js"></script>
+    
+    <script>
+        // Render the component
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(AuditChangeLog.default));
+    </script>
+</body>
+</html>
